@@ -4,46 +4,234 @@ Description: >
   task-manager-api
 
   Sample SAM Template for task-manager-api
-  
+
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 30
 
 Resources:
-  HelloWorldFunction:
+  DynamoDBTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: tasks
+      PrimaryKey:
+        Name: id
+        Type: String
+
+  TaskApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'task-api-${AWS::Region}'
+      StageName: 'Dev'  # Default stage (can be changed dynamically)
+      Description: 'API for development environment'
+      EndpointConfiguration: 'REGIONAL'
+
+  CreateTaskFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello-world/
-      Handler: app.lambdaHandler
+      CodeUri: src/
+      Handler: functions/task.createHandler
       Runtime: nodejs20.x
       Architectures:
         - x86_64
       Events:
-        HelloWorld:
+        CreateTaskEvent:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
-            Method: get
+            RestApiId: !Ref TaskApi
+            Path: /tasks
+            Method: POST
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Policies:
+        ## Read more about SAM Policy templates at:
+        ## https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBWritePolicy:
+            TableName: !Ref DynamoDBTable
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
         Target: "es2020"
         Sourcemap: true
-        EntryPoints: 
-        - app.ts
+        EntryPoints:
+          - functions/task.ts
+
+  UpdateTaskFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/
+      Handler: functions/task.updateHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Events:
+        UpdateTaskEvent:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref TaskApi
+            Path: /tasks/{id}
+            Method: PUT
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Policies:
+        ## Read more about SAM Policy templates at:
+        ## https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - functions/task.ts
+
+  GetAllTaskFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/
+      Handler: functions/task.getAllHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Events:
+        GetAllTaskEvent:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref TaskApi
+            Path: /tasks
+            Method: GET
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Policies:
+        ## Read more about SAM Policy templates at:
+        ## https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBReadPolicy:
+            TableName: !Ref DynamoDBTable
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - functions/task.ts
+
+  GetTaskByIdFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/
+      Handler: functions/task.getByIdHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Events:
+        GetTaskByIdEvent:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref TaskApi
+            Path: /tasks/{id}
+            Method: GET
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Policies:
+        ## Read more about SAM Policy templates at:
+        ## https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBReadPolicy:
+            TableName: !Ref DynamoDBTable
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - functions/task.ts
+
+  DeleteTaskByIdFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/
+      Handler: functions/task.deleteHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Events:
+        GetTaskByIdEvent:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref TaskApi
+            Path: /tasks/{id}
+            Method: DELETE
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Policies:
+        ## Read more about SAM Policy templates at:
+        ## https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - functions/task.ts
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  TaskApi:
+    Description: "API Gateway endpoint URL for Dev environment"
+    Value: !Sub "https://${TaskApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/tasks/"
+
+
+  CreateTaskFunction:
+    Description: "CreateTask Lambda Function ARN"
+    Value: !GetAtt CreateTaskFunction.Arn
+  CreateTaskFunctionIamRole:
+    Description: "Implicit IAM Role created for CreateTaskFunction"
+    Value: !GetAtt CreateTaskFunctionRole.Arn
+
+
+  UpdateTaskFunction:
+    Description: "UpdateTask Lambda Function ARN"
+    Value: !GetAtt UpdateTaskFunction.Arn
+  UpdateTaskFunctionIamRole:
+    Description: "Implicit IAM Role created for UpdateTaskFunction"
+    Value: !GetAtt UpdateTaskFunctionRole.Arn
+
+
+  GetAllTaskFunction:
+    Description: "GetAllTask Lambda Function ARN"
+    Value: !GetAtt GetAllTaskFunction.Arn
+  GetAllTaskFunctionIamRole:
+    Description: "Implicit IAM Role created for GetAllTaskFunction"
+    Value: !GetAtt GetAllTaskFunctionRole.Arn
+
+
+  GetTaskByIdFunction:
+    Description: "GetTaskById Lambda Function ARN"
+    Value: !GetAtt GetTaskByIdFunction.Arn
+  GetTaskByIdFunctionIamRole:
+    Description: "Implicit IAM Role created for GetTaskByIdFunction"
+    Value: !GetAtt GetTaskByIdFunctionRole.Arn
+
+
+  DeleteTaskByIdFunction:
+    Description: "DeleteTaskById Lambda Function ARN"
+    Value: !GetAtt DeleteTaskByIdFunction.Arn
+  DeleteTaskByIdFunctionIamRole:
+    Description: "Implicit IAM Role created for DeleteTaskByIdFunction"
+    Value: !GetAtt DeleteTaskByIdFunctionRole.Arn
