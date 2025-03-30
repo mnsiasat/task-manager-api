@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import * as uuid from 'uuid'
 import validateDTO from '../utils/validate'
-import { CreateTaskDto, UpdateTaskDto } from '../interfaces/task'
+import { CreateTaskDto, Status, UpdateTaskDto } from '../interfaces/task'
 import dynamoDb from '../dynamo'
 import {
   DeleteCommand,
@@ -51,6 +51,7 @@ export const createHandler = async (
         Item: {
           ...data,
           id,
+          status: Status.TO_DO,
           createdAt: timestamp,
           updatedAt: timestamp,
         },

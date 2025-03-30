@@ -1,17 +1,18 @@
 import { IsEnum, IsNotEmpty, IsString, IsUUID } from 'class-validator'
 import { Transform } from 'class-transformer'
+import _ from 'lodash'
 
-enum Status {
-  PENDING,
-  APPROVED,
-  REJECTED,
+export enum Status {
+  TO_DO = 'To Do',
+  IN_PROGRESS = 'In Progress',
+  COMPLETED = 'Completed',
 }
 
 export interface Task {
   id: number
   title: string
   status: Status
-  description: string
+  description?: string
 }
 
 export class CreateTaskDto implements Partial<Task> {
@@ -19,14 +20,8 @@ export class CreateTaskDto implements Partial<Task> {
   @IsString()
   title!: string
 
-  @IsNotEmpty()
-  @Transform(({ value }) => ('' + value).toUpperCase())
-  @IsEnum(Status)
-  status!: Status
-
-  @IsNotEmpty()
   @IsString()
-  description!: string
+  description?: string
 }
 
 export class UpdateTaskDto implements Partial<Task> {
@@ -35,11 +30,10 @@ export class UpdateTaskDto implements Partial<Task> {
   title?: string
 
   @IsNotEmpty()
-  @Transform(({ value }) => ('' + value).toUpperCase())
+  @Transform(({ value }) => _.snakeCase(value).toUpperCase())
   @IsEnum(Status)
   status?: Status
 
-  @IsNotEmpty()
   @IsString()
   description?: string
 }
