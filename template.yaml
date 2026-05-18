@@ -8,7 +8,17 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
+    Runtime: nodejs22.x
     Timeout: 30
+
+Parameters:
+  CognitoUserPoolArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /task-manager/dev/cognito-user-pool-arn
+  
+  FrontendOrigin:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /task-manager/dev/frontend-origin
 
 Resources:
   DynamoDBTable:
@@ -26,13 +36,22 @@ Resources:
       StageName: 'Dev'  # Default stage (can be changed dynamically)
       Description: 'API for development environment'
       EndpointConfiguration: 'REGIONAL'
+      Cors:
+        AllowMethods: "'OPTIONS,GET,POST,PUT,DELETE'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: !Ref FrontendOrigin
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn        
 
   CreateTaskFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: src/
       Handler: functions/task.createHandler
-      Runtime: nodejs20.x
       Architectures:
         - x86_64
       Events:
@@ -64,7 +83,6 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: functions/task.updateHandler
-      Runtime: nodejs20.x
       Architectures:
         - x86_64
       Events:
@@ -96,7 +114,6 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: functions/task.getAllHandler
-      Runtime: nodejs20.x
       Architectures:
         - x86_64
       Events:
@@ -128,7 +145,6 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: functions/task.getByIdHandler
-      Runtime: nodejs20.x
       Architectures:
         - x86_64
       Events:
@@ -160,7 +176,6 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: functions/task.deleteHandler
-      Runtime: nodejs20.x
       Architectures:
         - x86_64
       Events:
